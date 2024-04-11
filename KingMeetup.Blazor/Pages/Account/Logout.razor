@@ -1,0 +1,13 @@
+﻿@page "/logout"
+@inject IJSRuntime _jsRuntime
+@inject NavigationManager nav
+
+@code {
+
+	protected override async Task OnInitializedAsync()
+	{
+		await base.OnInitializedAsync();
+		await _jsRuntime.InvokeAsync<object>("localStorage.removeItem", "authToken");
+		nav.NavigateTo("/",true);
+	}
+}

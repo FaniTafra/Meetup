@@ -1,0 +1,177 @@
+﻿@page "/profile"
+@attribute [Authorize]
+@using KingMeetup.Blazor.IService
+@using KingMeetup.Messaging
+@inject IUserService _userService
+@inject NavigationManager _navigationManager
+@inject IJSRuntime js
+@inject IToastService _toastService
+@inject HttpClient _httpClient
+
+<h2>
+    <b>Moj profil</b>
+        @if (loading)
+        {
+            <span class="spinner-border spinner-border-sm mr-1"></span>
+        }
+</h2>
+<br />
+
+<div class="row g-2">
+    <div class="col-md-4 col-xl-4 col-xxl-4">
+        <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+        <div class="col-8">
+                <label for="FirstName">Ime</label>
+                <input type="text" @bind-value="model.FirstName" id="FirstName" class="form-control dark-theme-textbox">
+                <ValidationMessage For="@(() => model.FirstName)" />
+            </div>
+            <br />
+            <div class="col-8">
+                <label for="LastName">Prezime</label>
+                <input type="text" @bind-value="model.LastName" id="LastName" class="form-control dark-theme-textbox">
+                <ValidationMessage For="@(() => model.LastName)" />
+            </div>
+            <br />
+            <div class="col-8">
+                <label for="Email">Email</label>
+                <input type="text" @bind-value="model.Email" id="Email" class="form-control dark-theme-textbox">
+                <ValidationMessage For="@(() => model.Email)" />
+            </div>
+            <br />
+            <div class="col-8">
+                <label for="Phone">Telefon</label>
+                <input type="number" @bind-value="model.Phone" id="Phone" class="form-control dark-theme-textbox" />
+                <ValidationMessage For="@(() => model.Phone)" />
+            </div>
+            <br />
+            <div class="col-8">
+                <label for="Password">Nova lozinka</label>
+                <input type="password" @bind-value="model.Password" id="Password" class="form-control dark-theme-textbox">
+                <ValidationMessage For="@(() => model.Password)" />
+            </div>
+            <br />
+            <div class="col-8">
+                <label for="ConfirmPassword">Ponovi lozinku</label>
+                <input type="password" @bind-value="model.ConfirmPassword" id="ConfirmPassword" class="form-control dark-theme-textbox">
+                <ValidationMessage For="@(() => model.ConfirmPassword)" />
+            </div>
+            <br />
+@*            <div class="col-8">
+                <label for="Birthday">Datum rođenja</label>
+                <input type="text" @bind-value="model.Birthday" placeholder="dd.mm.yyyy" class="form-control dark-theme-textbox" id="Birthday" format="dd.mm.yyyy"
+                       onfocus="(this.type='date')"
+                       onblur="(this.type='text')">
+                <ValidationMessage For="@(() => model.Birthday)" />
+            </div>
+            <br />*@
+            <div class="col-8">
+                <button disabled="@loading" class="btn btn-danger">
+                    @if (loading)
+                    {
+                        <span class="spinner-border spinner-border-sm mr-1"></span>
+                    }
+                    Promijeni podatke
+                </button>
+            </div>
+        </EditForm>
+    </div>
+    <div class="col-7">
+        @if (model.RoleID == 0)
+        {
+            <div class="row">
+                <label for="interestButton" class="col-5" >Želiš ponovno odabrati svoje interese?</label>
+                <button type="submit" class="col-3 btn btn-danger" @onclick="UpdateInterest" id=" interestButton">Promijeni interese</button>
+            </div>
+            <br />
+        }
+        <div class="col-8">
+            <label for="Textarea" >BIO</label>
+            <textarea class="form-control" @bind="model.Description" id="Textarea" rows="5"></textarea>
+        </div>
+        <br />
+        @if (model.RoleID == 0)
+        {
+            <div class="col-8">
+                <table class="table">
+                    <tr>
+                        <td><b>Moji certifikati:</b></td>
+                    </tr>
+                    @if (model.Certificates.Count == 0)
+                    {
+                        <tr>
+                            <td>    Nema certifikata za prikaz</td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var item in model.Certificates)
+                        {
+                            <tr>
+                                @{
+                                    string filePath = @item.FileLocation;
+                                    int startIndex = @item.FileLocation.LastIndexOf('/') + 1;
+                                    int endIndex = @item.FileLocation.LastIndexOf('.');
+                                    string isolatedPart = @item.FileLocation.Substring(startIndex, endIndex - startIndex);
+                                }
+
+                                <td>@isolatedPart</td>
+                                <td>
+                                    <button class="btn btn-link" @onclick="() => DownloadFileFromURL(isolatedPart, item.FileLocation)">
+                                        Download
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </table>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="col-12">
+    <hr />
+</div>
+
+@code {
+    private UserUpdateResponse model = new UserUpdateResponse();
+    private bool loading;
+
+    protected override async Task OnInitializedAsync()
+    {
+    loading = true;
+    model = await _userService.GetUser();
+
+
+    loading = false;
+    }
+
+    private async Task DownloadFileFromURL(string fileName, string fileURL)
+    {
+        await js.InvokeVoidAsync("triggerFileDownload", fileName, fileURL);
+    }
+
+    private async void OnValidSubmit()
+    {
+        loading = true;
+        try
+        {
+            await _userService.UpdateUser(model);
+            _toastService.ShowSuccess("Podaci su uspješno ažurirani!");
+            _navigationManager.NavigateTo("/Profile", true);
+            loading = false;
+
+        }
+        catch (Exception ex)
+        {
+            _toastService.ShowError(ex.Message);
+            loading = false;
+            StateHasChanged();
+        }
+    }
+    private async Task UpdateInterest()
+    {
+        _navigationManager.NavigateTo("/chooseInterest", true);
+    }
+}

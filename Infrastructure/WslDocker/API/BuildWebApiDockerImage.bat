@@ -1,0 +1,1 @@
+wsl docker build ../../../ -t meetup-api:latest -f ../../../KingMeetup.api/Dockerfile

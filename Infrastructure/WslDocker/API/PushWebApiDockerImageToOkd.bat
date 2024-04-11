@@ -1,0 +1,2 @@
+wsl docker tag meetup-api:latest default-route-openshift-image-registry.apps.ocp.dev.king-ict.corp/king-akademija-2023/meetup-image-stream:1
+wsl docker push default-route-openshift-image-registry.apps.ocp.dev.king-ict.corp/king-akademija-2023/meetup-image-stream:1

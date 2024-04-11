@@ -1,0 +1,194 @@
+﻿@page "/HomePage"
+@inject IEventService _eventService
+@inject CustomAuthenticationStateProvider _customAuth
+<h3>Home</h3>
+
+@if (Events == null)
+{
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+}
+else if (Events != null && Events.Any())
+{
+    <div class="input-group mb-3">
+        <label class="input-group-text" for="inputGroupSelect01">Odaberite:</label>
+            <InputSelect @bind-Value="selectedAction" class="form-select" id="filterId">
+            <option value="All">Svi događaji</option>
+            <AuthorizeView Roles="User">
+                <option value="SignedUpEvents">Prijavljeni događaji</option>
+            </AuthorizeView>
+            <option value="UpcomingEvents">Nadolazeći događaji</option>
+            </InputSelect>
+    </div>
+    <div class="row">
+        <div class="col-md-6">
+            @if(selectedAction == "All")
+            {
+                @foreach (var eventItem in Events)
+                {
+                    <div class="col-md-4">
+                        <div class="card text-center" style="width: 18rem; margin-bottom:20px;">
+                            <div class="card-body">
+                                <p class="card-title">@eventItem.Request.StartDateTime.ToString("dd.MM HH:mm") - @eventItem.Request.EndDateTime.ToString("dd.MM HH:mm")</p>
+                                <p class="card-text">@eventItem.Request.City, @eventItem.Request.Address</p>
+                                @if (eventItem.IsSignedUp)
+                                {
+                                    <h3 class="card-title" style="color: green">@eventItem.Request.Name</h3>
+                                }
+                                else
+                                {
+                                    <h3 class="card-title">@eventItem.Request.Name</h3>
+                                }
+                                @if ((eventItem.Request.AttendeesOnSite > 0) && (eventItem.Request.AttendeesOnLine > 0))
+                                {
+                                    <p class="card-text">Hibridno</p>
+                                }
+                                else if (eventItem.Request.AttendeesOnSite == 0)
+                                {
+                                    <p class="card-text">Online</p>
+                                }
+                                else
+                                {
+                                    <p class="card-text">Uživo</p>
+                                }
+                                <AuthorizeView Roles="User">
+                                    <a href="event/@eventItem.Request.Id" class="btn btn-primary">Pojedinosti</a>
+                                </AuthorizeView>
+                                <AuthorizeView Roles="Admin">
+                                    @if(eventItem.Request.StartDateTime > DateTime.Now)
+                                    {
+                                        <a href="manageEvent/@eventItem.Request.Id" class="btn btn-primary">Uredi</a>
+                                    }
+                                </AuthorizeView>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else if (selectedAction == "SignedUpEvents")
+            {
+                @foreach (var eventItem in SignedUpEvents)
+                {
+                    <div class="col-md-4">
+                        <div class="card text-center" style="width: 18rem; margin-bottom:20px;">
+                            <div class="card-body">
+                                <p class="card-title">@eventItem.Request.StartDateTime.ToString("dd.MM HH:mm") - @eventItem.Request.EndDateTime.ToString("dd.MM HH:mm")</p>
+                                <p class="card-text">@eventItem.Request.City, @eventItem.Request.Address</p>
+                                @if (eventItem.IsSignedUp)
+                                {
+                                    <h3 class="card-title" style="color: green">@eventItem.Request.Name</h3>
+                                }
+                                else
+                                {
+                                    <h3 class="card-title">@eventItem.Request.Name</h3>
+                                }
+                                @if ((eventItem.Request.AttendeesOnSite > 0) && (eventItem.Request.AttendeesOnLine > 0))
+                                {
+                                    <p class="card-text">Hibridno</p>
+                                }
+                                else if (eventItem.Request.AttendeesOnSite == 0)
+                                {
+                                    <p class="card-text">Online</p>
+                                }
+                                else
+                                {
+                                    <p class="card-text">Uživo</p>
+                                }
+                                <AuthorizeView Roles="User">
+                                    <a href="event/@eventItem.Request.Id" class="btn btn-primary">Pojedinosti</a>
+                                </AuthorizeView>
+                                <AuthorizeView Roles="Admin">
+                                    @if (eventItem.Request.StartDateTime > DateTime.Now)
+                                    {
+                                        <a href="manageEvent/@eventItem.Request.Id" class="btn btn-primary">Uredi</a>
+                                    }
+                                </AuthorizeView>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else if(selectedAction == "UpcomingEvents")
+            {
+                @foreach (var eventItem in Events)
+                {
+                    @if (eventItem.Request.StartDateTime > DateTime.Now)
+                    {
+                        <div class="col-md-4">
+                            <div class="card text-center" style="width: 18rem; margin-bottom:20px;">
+                                <div class="card-body">
+                                    <p class="card-title">@eventItem.Request.StartDateTime.ToString("dd.MM HH:mm") - @eventItem.Request.EndDateTime.ToString("dd.MM HH:mm")</p>
+                                    <p class="card-text">@eventItem.Request.City, @eventItem.Request.Address</p>
+                                    @if (eventItem.IsSignedUp)
+                                    {
+                                        <h3 class="card-title" style="color: green">@eventItem.Request.Name</h3>
+                                    }
+                                    else
+                                    {
+                                        <h3 class="card-title">@eventItem.Request.Name</h3>
+                                    }
+                                    @if ((eventItem.Request.AttendeesOnSite > 0) && (eventItem.Request.AttendeesOnLine > 0))
+                                    {
+                                        <p class="card-text">Hibridno</p>
+                                    }
+                                    else if (eventItem.Request.AttendeesOnSite == 0)
+                                    {
+                                        <p class="card-text">Online</p>
+                                    }
+                                    else
+                                    {
+                                        <p class="card-text">Uživo</p>
+                                    }
+                                    <AuthorizeView Roles="User">
+                                        <a href="event/@eventItem.Request.Id" class="btn btn-primary">Pojedinosti</a>
+                                    </AuthorizeView>
+                                    <AuthorizeView Roles="Admin">
+                                        @if (eventItem.Request.StartDateTime > DateTime.Now)
+                                        {
+                                            <a href="manageEvent/@eventItem.Request.Id" class="btn btn-primary">Uredi</a>
+                                        }
+                                    </AuthorizeView>
+                                </div>
+                            </div>
+                        </div>                    
+                    }
+                }
+            }
+        </div>
+    </div>
+}
+else
+{
+    <p>Nema događaja za prikazat.</p>
+}
+
+
+@code {
+    private List<EventResponse> Events { get; set; }
+    private List<EventResponse> SignedUpEvents { get; set; }
+    private AttendeeListsResponse isUserSignedUp;
+    private string selectedAction { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        selectedAction = "All";
+        string role = await _customAuth.GetRoleId();
+        if (role == "Admin")
+        {
+            Events = await _eventService.GetAdminEvents();
+        }
+        else
+        {
+            Events = await _eventService.GetUserEvents();
+            SignedUpEvents = await _eventService.GetSignedUpEvents(); 
+        }
+
+        int userId = await _customAuth.GetUserId();
+        foreach (EventResponse e in Events)
+        {
+            int eventId = e.Request.Id;
+            e.IsSignedUp = (await _eventService.IsUserSignedUp(eventId, userId)).IsSignedUp;
+        }
+    }
+}

@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: meetup-blazor-deployment
+  namespace: king-akademija-2023
+spec:
+  selector:
+    matchLabels:
+      app: meetup-blazor
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: meetup-blazor
+    spec:
+      containers:
+        - name: meetup-blazor-container
+          image: >-
+            default-route-openshift-image-registry.apps.ocp.dev.king-ict.corp/king-akademija-2023/meetup-image-stream-fe:2
+          ports:
+            - containerPort: 8085
+              protocol: TCP
+          env:
+            - name: ASPNETCORE_URLS
+              value: http://*:8085
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: meetup-blazor-service
+  namespace: king-akademija-2023
+spec:
+  type: ClusterIP
+  ipFamilyPolicy: SingleStack
+  sessionAffinity: None
+  internalTrafficPolicy: Cluster
+  selector:
+    app: meetup-blazor
+  ports:
+    - protocol: TCP
+      port: 8085
+      targetPort: 8085
+

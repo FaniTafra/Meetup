@@ -1,0 +1,77 @@
+﻿@layout LoginLayout
+@page "/Login"
+@using KingMeetup.Blazor.IService
+@using KingMeetup.Messaging
+@inject IAuthService _authService
+@inject IInterestsService _interestsService
+@inject NavigationManager _navigationManager
+@inject IToastService _toastService
+@inject CustomAuthenticationStateProvider _customAuth
+
+<div class="col-12 row">
+    <div class="col-xl-4 col-md-6 col-sm-8 col-12  order-2 order-md-1">
+        <div class="col-xl-12 col-md-12 col-sm-12 col-12 text-white">
+            <h2><b>Prijava</b></h2>
+            <br />
+            <div class="col-xl-11 col-md-11 col-sm-11 col-11">
+                <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                    <DataAnnotationsValidator />
+                     <div class="form-group">
+                        <InputText @bind-Value="model.Email" placeholder="Email" class="form-control" />
+                        <ValidationMessage For="@(() => model.Email)" />
+                    </div>
+                    <br />
+                    <div class="form-group">
+                        <InputText @bind-Value="model.Password" placeholder="Lozinka" type="password" class="form-control" />
+                        <ValidationMessage For="@(() => model.Password)" />
+                    </div>
+                    <br />
+                    <button disabled="@loading" class="btn btn-primary">
+                        @if (loading)
+                        {
+                            <span class="spinner-border spinner-border-sm mr-1"></span>
+                        }
+                        Prijava
+                    </button>
+                    <br />
+                    <br />
+                    Još nemaš korisnički račun? 
+                    <NavLink href="/registration" class="btn btn-link">Registriraj se</NavLink>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-8 col-md-6 col-sm-4 col-12 position-relative order-1 order-md-2">
+        <div class="col-xl-6 col-md-6 col-sm-4 col-6 login-logo-class img-fluid mx-auto text-center">
+            <img src="/css/Logo.png" class="img-fluid" />
+        </div>
+    </div>
+</div>
+
+
+@code {
+    private LoginRequest model = new LoginRequest();
+    private bool loading;
+
+    private async void OnValidSubmit()
+    {
+        loading = true;
+        try
+        {
+            await _authService.Login(model);
+            string role = await _customAuth.GetRoleId();
+            if (await _interestsService.CheckUsersInterest() || role == "Admin")
+            {
+                _navigationManager.NavigateTo("/HomePage", true);
+            }
+            else
+                _navigationManager.NavigateTo("/ChooseInterest", true);
+        }
+        catch (Exception ex)
+        {
+            _toastService.ShowError(ex.Message);
+            loading = false;
+            StateHasChanged();
+        }
+    }
+}

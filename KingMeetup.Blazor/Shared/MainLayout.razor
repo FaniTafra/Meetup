@@ -1,0 +1,31 @@
+﻿@using Blazored.Toast.Configuration
+@using Blazored.Toast.Services;
+@inherits LayoutComponentBase
+@inject IToastService _toastService
+@inject NavigationManager _navigationManager;
+@inject CustomAuthenticationStateProvider _customAuthenticationStateProvider;
+
+<PageTitle>KingMeetup</PageTitle>
+
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
+
+    <main>
+        <BlazoredToasts Position=ToastPosition.BottomCenter
+                        Timeout="5"
+                        IconType="IconType.FontAwesome"
+                        SuccessClass="success-toast-override"
+                        SuccessIcon="fa fa-thumbs-up"
+                        ErrorIcon="fa fa-bug" />
+
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
+
+@code{
+
+}

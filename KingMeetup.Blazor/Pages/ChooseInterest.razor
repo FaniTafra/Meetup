@@ -1,0 +1,70 @@
+﻿@layout ChooseInterestsLayout
+@page "/ChooseInterest"
+@using KingMeetup.Blazor.IService;
+@inject IInterestsService _interestsService;
+@inject NavigationManager _navigationManager;
+@inject IToastService _toastService
+
+<h3 class="text-white">Odaberite interese</h3>
+
+@if (Interests != null && Interests.Count > 0)
+{
+    foreach (InterestResponse interest in Interests)
+    {
+        <div class="col-xl-12 col-md-12 col-sm-12 col-12 text-white">
+        <InputCheckbox id="@interest.Name" @bind-Value="interest.IsSelected"></InputCheckbox>
+        <label for="@interest.Name">@interest.Name</label>
+        <br />
+        </div>
+    }
+    <br />
+    <button type="button" class="btn btn-primary" @onclick="HandleSubmit">Potvrdi</button>
+    <br />
+}
+else
+{
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+}
+@if (UserInterests != null && UserInterests.Count > 0)
+{
+    <br />
+    <h5>Vaši trenutni interesi: </h5>
+    <Virtualize Items="@UserInterests">
+        <em>@context.Name</em> <br />
+    </Virtualize>
+}
+
+@code {
+    private List<InterestResponse> Interests { get; set; }
+    private List<InterestResponse> UserInterests { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Interests = await _interestsService.GetInterests();
+        UserInterests = await _interestsService.GetUserInterests();
+    }
+
+    public async Task HandleSubmit()
+    {
+        if (Interests.Any(x=>x.IsSelected))
+        {
+            List<UsersInterestRequest> usersInterestRequests = new List<UsersInterestRequest>();
+            int userId = await _interestsService.GetUserId();
+
+            List<int> CheckedInterestIds = Interests.Where(x => x.IsSelected).Select(x => x.Id).ToList();
+
+            foreach (var CheckedInterestId in CheckedInterestIds)
+            {
+                usersInterestRequests.Add(new UsersInterestRequest { UserId = userId, InterestId = CheckedInterestId});
+            }
+            await _interestsService.AddUsersInterests(usersInterestRequests);
+            _navigationManager.NavigateTo("/HomePage");
+        }
+        else
+        {
+            _toastService.ShowError("Morate odabrati barem jedan interes.");
+        }
+    }
+}

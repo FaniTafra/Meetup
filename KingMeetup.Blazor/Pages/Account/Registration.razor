@@ -1,0 +1,89 @@
+﻿@layout LoginLayout
+@page "/registration"
+@using KingMeetup.Blazor.IService
+@using KingMeetup.Messaging
+@inject IAuthService _authService
+@inject NavigationManager _navigationManager
+@inject IJSRuntime js
+@inject IToastService _toastService
+
+<div class="col-12 row">
+    <div class="col-xl-4 col-md-6 col-sm-8 col-12 order-2 order-md-1">
+        <div class="col-xl-12 col-md-12 col-sm-12 col-12 text-white">
+            <h2><b>Registracija</b></h2>
+            <br />
+            <div class="col-xl-11 col-md-11 col-sm-11 col-11">
+                <EditForm Model="@model" OnValidSubmit="OnValidSubmit">
+                    <DataAnnotationsValidator />
+                    <div class="form-group">
+                        <input type="text" @bind="model.FirstName" placeholder="Ime" class="form-control dark-theme-textbox" maxlength="50">
+                        <ValidationMessage For="@(() => model.FirstName)" />
+                    </div>
+                    <br />
+                    <div class="form-group">
+                        <input type="text" @bind="model.LastName" placeholder="Prezime" class="form-control dark-theme-textbox" maxlength="50">
+                        <ValidationMessage For="@(() => model.LastName)" />
+                    </div>
+                    <br />
+                    <div class="form-group">
+                        <input type="text" @bind="model.Email" placeholder="Email" class="form-control dark-theme-textbox">
+                        <ValidationMessage For="@(() => model.Email)" />
+                    </div>
+                    <br />
+                    <div class="form-group">
+                        <input type="number" @bind="model.Phone" placeholder="Telefon" class="form-control dark-theme-textbox" maxlength="15"/>
+                        <ValidationMessage For="@(() => model.Phone)" />
+                    </div>
+                    <br />
+                    <div class="form-group">
+                        <input type="password" @bind="model.Password" placeholder="Lozinka" class="form-control dark-theme-textbox">
+                        <ValidationMessage For="@(() => model.Password)" />
+                    </div>
+                    <br />
+                    <div class="form-group">
+                        <input type="password" @bind="model.ConfirmPassword" placeholder="Ponoviti lozinku" class="form-control dark-theme-textbox">
+                        <ValidationMessage For="@(() => model.ConfirmPassword)" />
+                    </div>
+                    <br />
+                    <div class="form-group">
+                        <button type="submit" class="btn btn-danger">Registracija</button>
+                        &nbsp;
+                        Imaš račun?
+                        <a href="/login">Prijavi se</a>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+    <div class="col-xl-8 col-md-6 col-sm-4 col-12 position-relative order-1 order-md-2">
+        <div class="col-xl-6 col-md-6 col-sm-4 col-6 login-logo-class img-fluid mx-auto text-center">
+            <img src="/css/Logo.png" class="img-fluid" />
+        </div>
+    </div>
+ </div>
+@*<div class="footer text-white fixed-bottom">
+    <p>Powered by: KING ICT Team 4</p>
+</div>*@
+
+@code {
+    private UserRequest model = new UserRequest();
+    private bool loading;
+
+    private async void OnValidSubmit()
+    {
+
+        loading = true;
+        try
+        {
+            await _authService.AddUserAsync(model);
+            _toastService.ShowSuccess("Registracija je uspješna");
+            _navigationManager.NavigateTo("/Login");
+        }
+        catch (Exception ex)
+        {
+            _toastService.ShowError(ex.Message);
+            loading = false;
+            StateHasChanged();
+        }
+    }
+}

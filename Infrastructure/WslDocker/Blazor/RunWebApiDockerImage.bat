@@ -1,0 +1,1 @@
+wsl docker run -p 5002:80 meetup-blazor

@@ -1,0 +1,82 @@
+﻿@page "/event/{eventId:int}"
+@using Blazored.Toast.Services;
+@using KingMeetup.Messaging;
+@using KingMeetup.Blazor.IService;
+@inject NavigationManager _navigationManager
+@inject IJSRuntime js
+@inject IEventService _eventService
+@inject IToastService _toastService
+
+@if (selectedEvent == null)
+{
+    <div class="spinner-border" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5 class="card-title">@selectedEvent.Request.Name</h5>
+                    <p class="card-text">@selectedEvent.Request.Description.
+                    <br />
+                        @if (isUserSignedUp.IsSignedUp)
+                        {
+                            @if (selectedEvent.Request.StartDateTime > DateTime.Now)
+                            {
+                                <div class="mt-2 ml-2">
+                                    <button class="btn btn-secondary" disabled="@disableButton" @onclick="SignOff">Odjavi se</button>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            @if (selectedEvent.Request.StartDateTime > DateTime.Now)
+                            {
+                                <div class="mt-2 ml-2">
+                                    <button class="btn btn-primary" disabled="@disableButton" @onclick="SignUpOnSite">Dolazim uživo</button>
+                                </div>
+                                <div class="mt-2 ml-2">
+                                    <button class="btn btn-primary" disabled="@disableButton" @onclick="SignUpOnLine">Dolazim online</button>
+                                </div>  
+                            }
+                        }
+                    </p>
+                </div>
+                <div class="col-md-6">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="card-text"><i class="bi bi-geo-alt-fill"></i> @selectedEvent.Request.Address, @selectedEvent.Request.City, @selectedEvent.Request.State </p>
+                            <p class="card-text"><i class="bi bi-clock"></i> @selectedEvent.Request.StartDateTime - @selectedEvent.Request.EndDateTime </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+
+
+@code {
+    private EventResponse? selectedEvent;
+    private AttendeeListsResponse isUserSignedUp;
+    int userId;
+    bool disableButton = false;
+
+    [Parameter]
+    public int eventId { get; set; }
+
+
+    protected override async Task OnParametersSetAsync()
+    {
+        userId = await _eventService.GetUserId();
+        selectedEvent = await _eventService.Get(eventId);
+        isUserSignedUp = await _eventService.IsUserSignedUp(eventId,userId);
+    }
+    private async Task SignUpOnSite() { disableButton = true; await _eventService.SignUp(eventId, userId, true); _navigationManager.NavigateTo("/", true); }
+    private async Task SignUpOnLine() { disableButton = true; await _eventService.SignUp(eventId, userId, false); _navigationManager.NavigateTo("/", true); }
+    private async Task SignOff() { disableButton = true; await _eventService.SignOff(eventId, userId); _navigationManager.NavigateTo("/", true); }
+}

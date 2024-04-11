@@ -1,0 +1,187 @@
+﻿@page "/manageEvent/{eventId:int?}"
+@using Blazored.Toast.Services;
+@using KingMeetup.Messaging;
+@using KingMeetup.Blazor.IService;
+@inject NavigationManager _navigationManager
+@inject IJSRuntime js
+@inject IEventService _eventService
+@inject IToastService _toastService
+@inject ILocationService _locationService
+@inject IInterestsService _interestsService
+
+<div class="col-xl-6 col-md-8 col-12">
+    <h3>@pageTitle</h3>
+    @if (Cities != null && State != null && State.Count > 0)
+    {
+        <EditForm Model="@newEvent" OnValidSubmit="OnValidSubmit">
+            <DataAnnotationsValidator />
+            <div class="form-group">
+                <label for="Naziv">Naziv događaja:</label>
+                <InputText @bind-Value="newEvent.Name" id="Naziv" class="form-control" placeholder="@newEvent.Name"/>
+                <ValidationMessage For="@(() => newEvent.Name)" />
+            </div>
+            <br />
+            <div class="form-group">
+                <label for="Interest">Kategorija:</label>
+                <select @bind="newEvent.InterestId" id="Interest" class="form-control">
+                    <option value=-1>--Odaberi Kategoriju--</option>
+                    @foreach (var interest in Interests)
+                    {
+                        <option value="@interest.Id"> @interest.Name </option>
+                    }
+                </select>
+                <ValidationMessage For="@(() => newEvent.InterestId)" />
+            </div>
+            <br />
+            <div class="form-group">
+                <label for="State">Država:</label>
+                <select @onchange="UpdateCitiesDDR" id="State" class="form-control">
+                    <option value=0>--Odaberi Državu--</option>
+                    @foreach (var state in State)
+                    {
+                        <option value="@state.Id">@state.Name</option>
+                    }
+                </select>
+                <ValidationMessage For="@(() => newEvent.State)" />
+            </div>
+            <br />
+            <div class="form-group">
+                <label for="City">Grad:</label>
+                <select disabled="@disableCities" @bind="newEvent.City" id="City" class="form-control">
+                    <option value="">--Odaberi Grad--</option>
+                    @foreach (var city in Cities)
+                    {
+                        <option value="@city.name">@city.name</option>
+                    }
+                </select>
+                <ValidationMessage For="@(() => newEvent.City)" />
+            </div>
+            <br />
+            <div class="form-group">
+                <label for="Adress">Adresa:</label>
+                <InputText @bind-Value="newEvent.Address" id="Adress" class="form-control" />
+                <ValidationMessage For="@(() => newEvent.Address)" />
+            </div>
+            <br />
+            <div class="form-group">
+                <label for="StartDateTime">Pocetak:</label>
+                <input type="datetime-local" min="@min1" max="@max1" @bind-value="newEvent.StartDateTime" id="StartDateTime" class="form-control" />
+                <ValidationMessage For="@(() => newEvent.StartDateTime)" />
+            </div>
+            <br />
+            <div class="form-group">
+                <label for="EndDateTime">Kraj:</label>
+                <input type="datetime-local" min="@min1" max="@max1" @bind-value="newEvent.EndDateTime" id="EndDateTime" class="form-control" />
+                <ValidationMessage For="@(() => newEvent.EndDateTime)" />
+            </div>
+            <br />
+            <div class="form-group">
+                <label for="OnSite:">Polaznici uživo:</label>
+                <input type="number" @bind="newEvent.AttendeesOnSite" id="OnSite" disabled="@disableAttendees" class="form-control" />
+                <ValidationMessage For="@(() => newEvent.AttendeesOnSite)" />
+            </div>
+            <br />
+            <div class="form-group">
+                <label for="OnLine:">Polaznici online:</label>
+                <input type="number" @bind="newEvent.AttendeesOnLine" id="OnLine" disabled="@disableAttendees" class="form-control" />
+                <ValidationMessage For="@(() => newEvent.AttendeesOnLine)" />
+            </div>
+            <div class="form-group">
+                <label for="Description">Opis:</label>
+                <InputTextArea @bind-Value="newEvent.Description" id="Description" class="form-control" />
+                <ValidationMessage For="@(() => newEvent.Description)" />
+            </div>
+            <br />
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary">Spremi</button>
+            </div>
+        </EditForm>
+    }
+    else
+    {
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    }
+</div>
+@code {
+    [Parameter]
+    public int? eventId { get; set; }
+
+    private EventRequest newEvent = new EventRequest();
+    private EventResponse res;
+    private List<StateResponse> State = new List<StateResponse>();
+    private List<CityRequest> Cities = new List<CityRequest>();
+    private List<InterestResponse> Interests = new List<InterestResponse>();
+    private string StartDate, EndDate;
+    private string min1, max1;
+    private bool disableCities = true;
+    private bool disableAttendees = false;
+    private string pageTitle = "Novi događaj";
+
+    protected override async Task OnInitializedAsync()
+    {
+        if (eventId != null)
+        {
+            pageTitle = "Ažuriraj događaj";
+            disableAttendees = true;
+            res = await _eventService.Get(eventId.Value);
+            newEvent = res.Request;
+        }      
+        Interests = await _interestsService.GetInterests();
+        State = await _locationService.GetStates();
+        
+    }
+    protected async Task<List<CityRequest>> GetCitiesByStateId(int stateId)
+    {
+        return await _locationService.GetCities(stateId);
+    }
+
+    public async Task UpdateCitiesDDR(ChangeEventArgs e)
+    {
+        int stateId = Convert.ToInt32(e.Value.ToString());
+
+        if (stateId == 0)
+        {
+            newEvent.State = "";
+            Cities.Clear();
+            disableCities = true;
+        }
+        else
+        {
+            newEvent.State = State.FirstOrDefault(x => x.Id == stateId).Name;
+            Cities = await GetCitiesByStateId(stateId);
+            disableCities = false;
+        }
+    }
+
+    private async void OnValidSubmit()
+    {
+        try
+        {
+            if (eventId != null)
+            {
+                res = await _eventService.Update(newEvent);
+            }
+            else
+            {
+                res = await _eventService.Create(newEvent);
+            }
+            _toastService.ShowSuccess(res.Message);
+            _navigationManager.NavigateTo("/", true);
+        }
+        catch (Exception ex)
+        {
+            _toastService.ShowError(ex.Message);
+            StateHasChanged();
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        min1 = DateTime.Now.ToString("yyyy-MM-ddTHH:mm");
+        max1 = DateTime.Now.AddMonths(6).ToString("yyyy-MM-ddTHH:mm");
+        newEvent.StartDateTime = DateTime.Now;
+        newEvent.EndDateTime = DateTime.Now.AddHours(1);
+    }
+}
